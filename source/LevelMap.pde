@@ -3,11 +3,9 @@ class LevelMap{                                                                 
   Room[] rooms;
   Room[] allRooms;
   
-  LevelMap(byte[] _segmentSizes, Vec3i _roomSizeSet, int _roomGap, int _hallSize){              //Will be used to make locations and room sizes. -> int[]_roomSizes, and Vec2f _locs
+  LevelMap(int _numRooms, Vec3i _roomSizeSet, int _roomGap, int _hallSize, int _blockSize, PImage _sprite){              //Will be used to make locations and room sizes. -> int[]_roomSizes, and Vec2f _locs
   
-    byte totalSize = 0;                                                                         //Determine total size
-    for(int i = 0; i < _segmentSizes.length; i++){ totalSize += _segmentSizes[i]; }
-    rooms = new Room[totalSize];
+    rooms = new Room[_numRooms];
     
     Vec3f roomCandidate = new Vec3f(0.0,0.0,0.0);
     byte roomSizeSetIndex = 0;                                                                  //Keeps track of what roomSizeSet to set roomSize when applying it to roomCandidate
@@ -21,7 +19,6 @@ class LevelMap{                                                                 
         case 1: roomSize = _roomSizeSet.y; break;
         case 2: roomSize = _roomSizeSet.z; roomSizeSetIndex = -1; break;
         default:  println("CONSTRUCTOR FAIL:: RoomSegment():: DEFAULT:: roomIndex VALUE = " + roomSizeSetIndex);
-      
       }    //save RoomSize for later...
       roomSizeSetIndex++;
       
@@ -36,35 +33,35 @@ class LevelMap{                                                                 
         
         isLocationValid = (!(isInsideOtherRooms(roomCandidate, i)));
       }
-      rooms[i] = new Room(new Vec2f(roomCandidate.x, roomCandidate.y), roomSize, byte(0), color(255,255,255));
+      byte roomType = 0;
+      if(i == 0) {roomType = 1; println("Start Room Set");}
+      else if(i == rooms.length - 1){roomType = 2; println("End Room Set");}
+      else{roomType = byte(random(3, 6)); println("Random Room Type = " + roomType);}
+      rooms[i] = new Room(new Vec2f(roomCandidate.x, roomCandidate.y), roomSize, roomType, color(255,255,255), _blockSize, _sprite);
     }
     
     int totalHallRooms = 0;                                                                  //create Corridors
     for(int i = 0; i < rooms.length - 1; i++){                                               //Need total num of rooms based on distance between rooms for array initialization
-      
-      float a = rooms[i].loc.x - rooms[i + 1].loc.x;                                         //find distance
-      float b = rooms[i].loc.y - rooms[i + 1].loc.y;
-      float distance = sqrt((a * a) + (b * b));
-      totalHallRooms += int(distance / _hallSize);
+
+      totalHallRooms += int(Tri.getC(rooms[i].loc.x - rooms[i + 1].loc.x, rooms[i].loc.y - rooms[i + 1].loc.y) / _hallSize);  // = int(distance / hallSize)
     }
     
-    allRooms = new Room[totalHallRooms + totalSize];
+    allRooms = new Room[totalHallRooms + _numRooms];
     int allRoomsIndex = rooms.length;                                                        //Start at rooms.length b/c we load rooms into allRooms first
     
     for(int i = 0; i < rooms.length; i++){ allRooms[i] = rooms[i]; }                         //Load rooms into allRooms
     
     for(int i = 0; i < rooms.length - 1; i++){
       
-      float a = rooms[i].loc.x - rooms[i + 1].loc.x;
-      float b = rooms[i].loc.y - rooms[i + 1].loc.y;
-      float distance = sqrt((a * a) + (b * b));
-      int numHallRooms = int(distance / _hallSize);
-      float subA = a / numHallRooms;
-      float subB = b / numHallRooms;
+      Tri.a = rooms[i].loc.x - rooms[i + 1].loc.x;
+      Tri.b = rooms[i].loc.y - rooms[i + 1].loc.y;
+      int numHallRooms = int(Tri.getC() / _hallSize);
+      float subA = Tri.a / numHallRooms;
+      float subB = Tri.b / numHallRooms;
       
       for(int j = 0; j < numHallRooms; j++){
       
-        allRooms[allRoomsIndex] = new Room(new Vec2f(rooms[i].loc.x - (subA * j), rooms[i].loc.y - (subB * j)), _hallSize, byte(0), color(255,255,255));
+        allRooms[allRoomsIndex] = new Room(new Vec2f(rooms[i].loc.x - (subA * j), rooms[i].loc.y - (subB * j)), _hallSize, byte(0), color(255,255,255), _blockSize, _sprite);
         allRoomsIndex++;
       
       }
@@ -76,7 +73,7 @@ class LevelMap{                                                                 
     
     float distance = (_lastRoom.z / 2) + (_thisRoomSize / 2) + _gap;
     float x = random(-distance, distance);
-    float y = sqrt((distance * distance) - (x * x));
+    float y = sqrt((distance * distance) - (x * x));                                                       //No method in Tri, and only done once, so just keep here.
     int randomY = int(random(2));
     if(randomY == 0){ y = -y; }
     
@@ -89,15 +86,11 @@ class LevelMap{                                                                 
     if(_roomIndex == 0){ return false; }
     
     for(byte i = 0; i < _roomIndex; i++){
-      float a = _candidate.y - rooms[i].loc.y;
-      float b = _candidate.x - rooms[i].loc.x;
-      float distance = sqrt((a * a) + (b * b));
-      
-      if(distance < ((rooms[i].size / 2) + (_candidate.z / 2))){ return true; }      //Add gap if shit hits the fan with rooms melding into each other.
+      if(Tri.getC(_candidate.y - rooms[i].loc.y, _candidate.x - rooms[i].loc.x) < ((rooms[i].size / 2) + (_candidate.z / 2))){ return true; }      //if(distance < thisRoomSize + candidate's roomSize)
     }
     return false;
   }
   /*==========================================================================================================================================*/
   
-  void display(Vec2f _offset){ for(int i = 1; i < allRooms.length; i++){ allRooms[i].display(_offset); } }
+  void display(Vec2f _offset){ for(int i = 0; i < allRooms.length; i++){ allRooms[i].display(_offset); } }
 }

@@ -3,17 +3,21 @@ class Block{                                                        //Used as bu
   Vec2f loc;
   int size;
   boolean isVisible;
+  String blockSpriteFilePath;
+  PImage sprite;
 
-  Block(Vec3f _v, boolean _isVisible){ 
+  Block(Vec3f _v, boolean _isVisible, PImage _sprite){ 
     loc = new Vec2f(_v.x, _v.y);
     size = int(_v.z);
     isVisible = _isVisible;
+    sprite = _sprite;
   }
   
-  void display(Vec2f _offset){ 
+  void displayWithResize(Vec2f _offset, boolean _isResized){
     if(getIsInViewPort(_offset)){
       if(isVisible){
-        rect(loc.x + _offset.x, loc.y + _offset.y, size, size); 
+        if(_isResized){ image(sprite, loc.x + _offset.x, loc.y + _offset.y, size, size);}
+        else{ image(sprite, loc.x + _offset.x, loc.y + _offset.y); } 
       }
     }
   }

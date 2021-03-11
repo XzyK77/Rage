@@ -6,7 +6,6 @@ class ViewPort{
   
     screenAnchorLoc = _screenAnchorLoc;
     offset = new Vec2f(0.0,0.0);
-    
   }
   
   Vec2f getOffset(Vec2f _centeringLoc){
@@ -15,5 +14,4 @@ class ViewPort{
     offset.y = screenAnchorLoc.y - _centeringLoc.y;
     return offset;
   }
-
 }
